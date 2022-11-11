@@ -82,7 +82,7 @@ export default function Room() {
       </p>
       <Grid.Container gap={2} justify="center">
         {users.map((user) => (
-          <Grid xs={12} md={6} key={user.id}>
+          <Grid sm={6} xs={12} key={user.id}>
             <MockItem
               text={`${user.name}: ${user.score}`}
               highlight={user.id === dominantUser?.id}
