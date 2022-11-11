@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { io } from "socket.io-client";
 import { User } from "../../types/user";
-import { Grid, Card, Text } from "@nextui-org/react";
+import UI from "../../components/room/UI";
 
 export default function Room() {
   const meRef = useRef<User | null>(null);
@@ -30,7 +30,23 @@ export default function Room() {
   const removeUser = async () => {
     fetch("/api/rooms/users", {
       method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify(meRef.current),
+    }).catch((error) => console.log(error));
+  };
+
+  const updateScore = async () => {
+    fetch("/api/rooms/users", {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        id: meRef.current?.id,
+        score: Number(Math.random().toFixed(6)),
+      }),
     }).catch((error) => console.log(error));
   };
 
@@ -44,60 +60,35 @@ export default function Room() {
       // add user
       addNewUser().then();
     });
-    // update chat on new message dispatched
-    socket.on("users", (users: User[]) => {
-      setUsers(users);
-    });
     socket.on("disconnect", () => {
       removeUser().then();
     });
+    socket.on("users", (users: User[]) => {
+      setUsers(users);
+    });
+    socket.on("dominantUser", (dominantUser: User | null) => {
+      setDominantUser(dominantUser);
+    });
+
     window.addEventListener("beforeunload", () => {
       removeUser().then();
     });
 
+    let interval = setInterval(() => {
+      // TODO: model.predict 값 계산
+      updateScore().then();
+    }, 2000);
+
     return () => {
       // socket disconnect on component unmount if exists
       socket?.disconnect();
+      clearInterval(interval);
     };
   }, [addNewUser]);
 
   return (
     <main style={{ margin: 16 }}>
-      <p style={{ textAlign: "center" }}>
-        Me: {meRef.current?.id}
-        <br />
-        Dominant Speaker:{" "}
-        {dominantUser ? (
-          <span>
-            {dominantUser.id}({dominantUser.score})
-          </span>
-        ) : (
-          "None"
-        )}
-      </p>
-      <Grid.Container gap={2} justify="center">
-        {users.map((user) => (
-          <Grid sm={6} xs={12} key={user.id}>
-            <Card
-              css={{
-                h: "$20",
-                $$cardColor:
-                  user.id === meRef.current?.id
-                    ? "$colors$gradient"
-                    : user.id === dominantUser?.id
-                    ? "$colors$success"
-                    : "$colors$primary",
-              }}
-            >
-              <Card.Body>
-                <Text h6 size={15} color="white" css={{ m: 0 }}>
-                  {`${user.id}: ${user.score}`}
-                </Text>
-              </Card.Body>
-            </Card>
-          </Grid>
-        ))}
-      </Grid.Container>
+      <UI users={users} me={meRef.current} dominantUser={dominantUser} />
     </main>
   );
 }
