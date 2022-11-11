@@ -9,7 +9,7 @@ export default async (req: NextApiRequest, res: NextApiResponseServerIO) => {
 
     const httpServer: NetServer = res.socket.server as any;
     res.socket.server.io = new ServerIO(httpServer, {
-      path: "/api/room/socketio",
+      path: "/api/rooms/socketio",
     });
   }
 
