@@ -26,3 +26,14 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 - ~~퇴장시 user 삭제~~
   - post 'removeUser' - { id }
   - disconnect socket
+- model load
+  - tensorflow converter 
+  - firebase Storage upload
+- firestore
+  - websocket 대체재
+- ~~tf.data.microphone 연동~~
+  - AudioContext sampleRate
+  - 1초마다 model.predict()
+  - post 'newScore' - { id, score }
+- bugs
+  - mobile browser close event

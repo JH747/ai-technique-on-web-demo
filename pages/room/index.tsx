@@ -1,10 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { io } from "socket.io-client";
+import * as tf from "@tensorflow/tfjs";
+import { LayersModel } from "@tensorflow/tfjs";
 import { User } from "../../types/user";
 import UI from "../../components/room/UI";
+import { Button } from "@nextui-org/react";
 
 export default function Room() {
   const meRef = useRef<User | null>(null);
+  const modelRef = useRef<LayersModel | null>(null);
   const [users, setUsers] = useState<User[]>([]);
   const [dominantUser, setDominantUser] = useState<User | null>(null);
 
@@ -37,18 +41,25 @@ export default function Room() {
     }).catch((error) => console.log(error));
   };
 
-  const updateScore = async () => {
-    fetch("/api/rooms/users", {
+  const updateScore = async (score: number) => {
+    await fetch("/api/rooms/users", {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
         id: meRef.current?.id,
-        score: Number(Math.random().toFixed(6)),
+        score,
       }),
     }).catch((error) => console.log(error));
   };
+
+  const loadModel = useCallback(async () => {
+    modelRef.current = await tf.loadLayersModel(
+      "https://storage.googleapis.com/tfjs-models/tfjs/mobilenet_v1_0.25_224/model.json"
+    );
+    return modelRef.current;
+  }, []);
 
   useEffect((): any => {
     // connect to socket server
@@ -74,20 +85,48 @@ export default function Room() {
       removeUser().then();
     });
 
-    let interval = setInterval(() => {
-      // TODO: model.predict 값 계산
-      updateScore().then();
-    }, 2000);
+    // load model & predict
+    loadModel().then(async (model) => {
+      try {
+        const mic = await tf.data.microphone({
+          fftSize: 1024,
+          columnTruncateLength: 232,
+          numFramesPerSpectrogram: 21,
+          sampleRateHz: new AudioContext().sampleRate as 44100 | 48000,
+          includeSpectrogram: true,
+          includeWaveform: false,
+        });
+
+        for (let count = 0; count < 100; count += 1) {
+          console.time();
+          const audioData = await mic.capture();
+          const spectrogramTensor = audioData.spectrogram;
+          spectrogramTensor?.print();
+          // model.predict(spectrogramTensor);
+          const score = Number(Math.random().toFixed(6));
+          await updateScore(score);
+          console.timeEnd(); // NOTE: 약 0.5초
+        }
+        mic.stop();
+      } catch (e) {
+        console.error(e, "microphone is blocked");
+      }
+    });
 
     return () => {
       // socket disconnect on component unmount if exists
       socket?.disconnect();
-      clearInterval(interval);
     };
-  }, [addNewUser]);
+  }, [addNewUser, loadModel]);
 
   return (
     <main style={{ margin: 16 }}>
+      <Button
+        css={{ margin: "8px auto", backgroundColor: "$colors$secondary" }}
+        size={"xs"}
+      >
+        Reset room
+      </Button>
       <UI users={users} me={meRef.current} dominantUser={dominantUser} />
     </main>
   );

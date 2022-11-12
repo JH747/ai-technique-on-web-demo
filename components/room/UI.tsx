@@ -1,4 +1,4 @@
-import { Card, Grid, Text } from "@nextui-org/react";
+import { Button, Card, Grid, Text } from "@nextui-org/react";
 import { User } from "../../types/user";
 
 interface Props {
