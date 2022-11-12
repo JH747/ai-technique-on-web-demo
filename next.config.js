@@ -8,6 +8,11 @@ const nextConfig = {
         destination: "https://nickname.hwanmoo.kr/:path*",
         source: "/nickname/:path*",
       },
+      {
+        destination:
+          "https://storage.googleapis.com/ai-technique-on-web.appspot.com/:path*",
+        source: "/gcp-bucket/:path*",
+      },
     ];
   },
 };

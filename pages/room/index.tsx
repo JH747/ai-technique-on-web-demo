@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { io } from "socket.io-client";
 import * as tf from "@tensorflow/tfjs";
 import { LayersModel } from "@tensorflow/tfjs";
+import { MicrophoneIterator } from "@tensorflow/tfjs-data/dist/iterators/microphone_iterator";
 import { User } from "../../types/user";
 import UI from "../../components/room/UI";
 import { Button } from "@nextui-org/react";
@@ -32,6 +34,7 @@ export default function Room() {
   }, []);
 
   const removeUser = async () => {
+    if (!meRef.current) return;
     await fetch("/api/rooms/users", {
       method: "DELETE",
       headers: {
@@ -42,13 +45,14 @@ export default function Room() {
   };
 
   const updateScore = async (score: number) => {
+    if (!meRef.current) return;
     await fetch("/api/rooms/users", {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        id: meRef.current?.id,
+        id: meRef.current.id,
         score,
       }),
     }).catch((error) => console.log(error));
@@ -69,7 +73,7 @@ export default function Room() {
 
   const loadModel = useCallback(async () => {
     modelRef.current = await tf.loadLayersModel(
-      "https://storage.googleapis.com/tfjs-models/tfjs/mobilenet_v1_0.25_224/model.json"
+      "/gcp-bucket/test-model/model.json"
     );
     return modelRef.current;
   }, []);
@@ -101,9 +105,10 @@ export default function Room() {
     });
 
     // load model & predict
+    let mic: MicrophoneIterator | null = null;
     loadModel().then(async (model) => {
       try {
-        const mic = await tf.data.microphone({
+        mic = await tf.data.microphone({
           fftSize: 1024,
           columnTruncateLength: 232,
           numFramesPerSpectrogram: 21,
@@ -116,26 +121,48 @@ export default function Room() {
           console.time();
           const audioData = await mic.capture();
           const spectrogramTensor = audioData.spectrogram;
-          spectrogramTensor?.print();
-          // model.predict(spectrogramTensor);
+          model.predict(spectrogramTensor.reshape([1, 4872]));
           const score = Number(Math.random().toFixed(6));
           await updateScore(score);
           console.timeEnd(); // NOTE: 약 0.5초
+
+          /** NOTE: 임시 write 로직
+          await fetch("/api/write", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              text: spectrogramTensor.dataSync().toString(),
+            }),
+          }).catch((error) => console.log(error));
+           */
         }
         mic.stop();
       } catch (e) {
-        console.error(e, "microphone is blocked");
+        console.error(e);
       }
     });
 
     return () => {
       // socket disconnect on component unmount if exists
       socket?.disconnect();
+      mic?.stop();
     };
   }, [addNewUser, loadModel]);
 
   return (
     <main style={{ margin: 16 }}>
+      <Link href="/">
+        <a>
+          <Button
+            css={{ margin: "8px auto", backgroundColor: "$colors$secondary" }}
+            size={"xs"}
+          >
+            Go Home
+          </Button>
+        </a>
+      </Link>
       <Button
         css={{ margin: "8px auto", backgroundColor: "$colors$secondary" }}
         size={"xs"}

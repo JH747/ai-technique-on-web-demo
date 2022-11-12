@@ -26,9 +26,9 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 - ~~퇴장시 user 삭제~~
   - post 'removeUser' - { id }
   - disconnect socket
-- model load
+- ~~model load~~
   - tensorflow converter 
-  - firebase Storage upload
+  - GCP Storage upload
 - firestore
   - websocket 대체재
 - ~~tf.data.microphone 연동~~
