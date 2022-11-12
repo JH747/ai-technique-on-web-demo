@@ -22,7 +22,7 @@ export default function Room() {
     const me = { id, score: 0 };
     meRef.current = me;
 
-    fetch("/api/rooms/users", {
+    await fetch("/api/rooms/users", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -32,7 +32,7 @@ export default function Room() {
   }, []);
 
   const removeUser = async () => {
-    fetch("/api/rooms/users", {
+    await fetch("/api/rooms/users", {
       method: "DELETE",
       headers: {
         "Content-Type": "application/json",
@@ -54,6 +54,19 @@ export default function Room() {
     }).catch((error) => console.log(error));
   };
 
+  const resetRoom = useCallback(async () => {
+    const promises = users.map((user) =>
+      fetch("/api/rooms/users", {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ id: "ALL" }),
+      }).catch((error) => console.log(error))
+    );
+    await Promise.all(promises);
+  }, [users]);
+
   const loadModel = useCallback(async () => {
     modelRef.current = await tf.loadLayersModel(
       "https://storage.googleapis.com/tfjs-models/tfjs/mobilenet_v1_0.25_224/model.json"
@@ -72,7 +85,9 @@ export default function Room() {
       addNewUser().then();
     });
     socket.on("disconnect", () => {
-      removeUser().then();
+      removeUser().then(() => {
+        window.location.reload();
+      });
     });
     socket.on("users", (users: User[]) => {
       setUsers(users);
@@ -124,6 +139,11 @@ export default function Room() {
       <Button
         css={{ margin: "8px auto", backgroundColor: "$colors$secondary" }}
         size={"xs"}
+        onClick={() => {
+          resetRoom().then(() => {
+            window.location.reload();
+          });
+        }}
       >
         Reset room
       </Button>

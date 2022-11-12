@@ -22,10 +22,15 @@ export default async (req: NextApiRequest, res: NextApiResponseServerIO) => {
   } else if (req.method === "DELETE") {
     const target = req.body;
 
-    // delete user
-    users = users.filter((user) => user.id !== target.id);
-    res.socket.server.io.emit("users", users);
+    if (target.id === "ALL") {
+      // delete all users
+      users = [];
+    } else {
+      // delete user
+      users = users.filter((user) => user.id !== target.id);
+    }
 
+    res.socket.server.io.emit("users", users);
     res.status(200).json({});
   } else if (req.method === "PATCH") {
     const target = req.body;

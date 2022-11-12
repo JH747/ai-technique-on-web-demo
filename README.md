@@ -35,5 +35,3 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
   - AudioContext sampleRate
   - 1초마다 model.predict()
   - post 'newScore' - { id, score }
-- bugs
-  - mobile browser close event
