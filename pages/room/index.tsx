@@ -121,7 +121,7 @@ export default function Room() {
           console.time();
           const audioData = await mic.capture();
           const spectrogramTensor = audioData.spectrogram;
-          model.predict(spectrogramTensor.reshape([1, 4872]));
+          // model.predict(spectrogramTensor.reshape([1, 4872])).print();
           const score = Number(Math.random().toFixed(6));
           await updateScore(score);
           console.timeEnd(); // NOTE: 약 0.5초
