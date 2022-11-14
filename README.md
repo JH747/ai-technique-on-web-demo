@@ -35,3 +35,10 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
   - AudioContext sampleRate
   - 1초마다 model.predict()
   - post 'newScore' - { id, score }
+
+## Tensor txt 생성 방법
+- pages/room/index.tsx line 130에 있는 주석 제거
+- pages/api/write.ts line 7에 있는 path("./OOO.txt") 원하는 이름으로 변경
+- `yarn install & yarn dev`로 사이트를 실행하고 /room route로 이동
+- 약 50초(100개의 Tensor)간 녹음됨 - (이유: room/index.tsx line 120의 `count < 100` 때문에)
+- 생성된 txt 파일을 확인 후 맨 앞/뒤를 적절히 삭제
