@@ -40,5 +40,4 @@ next-env.d.ts
 .vscode
 
 # test files
-speech.txt
-non-speech.txt
+*.txt
